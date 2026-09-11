@@ -2,6 +2,9 @@
 
 Start here. This chapter gives you the whole project in one place with minimal detail.
 
+For a request-by-request example, open
+[Follow one request: “Review my team for GW5”](15-gw5-request-walkthrough.md).
+
 ## The one idea to remember
 
 ```text
