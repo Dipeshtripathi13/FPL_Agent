@@ -1,0 +1,33 @@
+# Versioned from the official 2026/27 game rules.
+# Review this file at the start of every season because FPL rules can change.
+season: "2026/27"
+squad_size: 15
+starting_size: 11
+initial_budget: 100.0
+max_players_per_club: 3
+squad_positions:
+  GK: 2
+  DEF: 5
+  MID: 5
+  FWD: 3
+lineup:
+  minimum:
+    GK: 1
+    DEF: 3
+    MID: 2
+    FWD: 1
+  maximum:
+    GK: 1
+    DEF: 5
+    MID: 5
+    FWD: 3
+max_free_transfers: 5
+additional_transfer_cost: 4
+max_transfers_per_gameweek: 20
+chips:
+  - wildcard
+  - freehit
+  - bboost
+  - 3xc
+chip_sets: 2
+deadline_minutes_before_first_match: 90

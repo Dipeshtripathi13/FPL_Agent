@@ -1,0 +1,21 @@
+# This is a fictional squad. Prices are in millions of pounds.
+entry_id: "learning-demo"
+bank: 1.0
+free_transfers: 1
+active_chip: null
+squad:
+  - {player_id: 1, purchase_price: 5.0, selling_price: 5.0}
+  - {player_id: 2, purchase_price: 4.0, selling_price: 4.0}
+  - {player_id: 3, purchase_price: 6.0, selling_price: 6.0}
+  - {player_id: 4, purchase_price: 5.5, selling_price: 5.5}
+  - {player_id: 5, purchase_price: 5.0, selling_price: 5.0}
+  - {player_id: 6, purchase_price: 4.5, selling_price: 4.5}
+  - {player_id: 7, purchase_price: 4.0, selling_price: 4.0}
+  - {player_id: 8, purchase_price: 10.0, selling_price: 10.0}
+  - {player_id: 9, purchase_price: 9.5, selling_price: 9.5}
+  - {player_id: 10, purchase_price: 8.0, selling_price: 8.0}
+  - {player_id: 11, purchase_price: 6.5, selling_price: 6.5}
+  - {player_id: 12, purchase_price: 5.0, selling_price: 5.0}
+  - {player_id: 13, purchase_price: 8.5, selling_price: 8.5}
+  - {player_id: 14, purchase_price: 7.5, selling_price: 7.5}
+  - {player_id: 15, purchase_price: 6.5, selling_price: 6.5}
