@@ -5,6 +5,9 @@
 By completing this project you should be able to explain and build an agent as a controlled software
 system—not merely as a prompt sent to a model.
 
+First read the short [end-to-end visual guide](14-end-to-end-guide.md), then use the stages below to
+study each component in more depth.
+
 ## Suggested sequence
 
 | Stage | Build | Main concept | Exercise |

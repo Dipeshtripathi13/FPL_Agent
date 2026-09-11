@@ -184,21 +184,22 @@ References:
 
 The documentation is arranged as a small course:
 
-1. [Learning plan](docs/00-learning-plan.md)
-2. [Agentic AI fundamentals](docs/01-agentic-ai.md)
-3. [System architecture](docs/02-architecture.md)
-4. [Data and provenance](docs/03-data.md)
-5. [FPL rules as code](docs/04-rules-engine.md)
-6. [Expected-points modeling](docs/05-projections.md)
-7. [Optimization](docs/06-optimization.md)
-8. [The Qwen tool harness](docs/07-agent-harness.md)
-9. [Safety and compliance](docs/08-safety.md)
-10. [Testing and evaluation](docs/09-evaluation.md)
-11. [Roadmap](docs/10-roadmap.md)
-12. [Evidence pipeline](docs/11-evidence-pipeline.md)
-13. [Safe web research](docs/12-safe-web-research.md)
-14. [Audits and source governance](docs/13-audits-and-source-governance.md)
-15. [Glossary](docs/glossary.md)
+1. [Start here: end-to-end visual guide](docs/14-end-to-end-guide.md)
+2. [Learning plan](docs/00-learning-plan.md)
+3. [Agentic AI fundamentals](docs/01-agentic-ai.md)
+4. [System architecture](docs/02-architecture.md)
+5. [Data and provenance](docs/03-data.md)
+6. [FPL rules as code](docs/04-rules-engine.md)
+7. [Expected-points modeling](docs/05-projections.md)
+8. [Optimization](docs/06-optimization.md)
+9. [The Qwen tool harness](docs/07-agent-harness.md)
+10. [Safety and compliance](docs/08-safety.md)
+11. [Testing and evaluation](docs/09-evaluation.md)
+12. [Roadmap](docs/10-roadmap.md)
+13. [Evidence pipeline](docs/11-evidence-pipeline.md)
+14. [Safe web research](docs/12-safe-web-research.md)
+15. [Audits and source governance](docs/13-audits-and-source-governance.md)
+16. [Glossary](docs/glossary.md)
 
 ## Repository map
 
