@@ -24,6 +24,8 @@ by the Premier League or Fantasy Premier League.
 - Store source-bound availability observations in an immutable local SQLite history.
 - Resolve player names, freshness, and conflicting evidence with fail-closed policies.
 - Discover reviewable web sources through an allowlisted, cached Brave Search adapter.
+- Render per-player evidence timelines and embed evidence fingerprints in reports.
+- Expire reusable domain permissions through a reviewed-source registry.
 - Produce Markdown and machine-readable JSON reports.
 
 The project does not automatically turn search snippets into facts, predict price changes, optimize
@@ -72,6 +74,7 @@ Build a local evidence history and use it in the recommendation:
 fpl-agent evidence init
 fpl-agent evidence import examples/evidence.yaml
 fpl-agent evidence resolve --as-of 2026-09-12T00:00:00Z
+fpl-agent evidence timeline --player Flint --as-of 2026-09-12T00:00:00Z
 fpl-agent recommend --gameweek 4 \
   --evidence-db data/private/evidence.db \
   --evidence-as-of 2026-09-12T00:00:00Z
@@ -80,6 +83,16 @@ fpl-agent recommend --gameweek 4 \
 The `--evidence-as-of` option makes the fictional dated example reproducible. Omit it for a live
 decision so freshness is measured against the current time. Read the
 [evidence pipeline tutorial](docs/11-evidence-pipeline.md) before using real sources.
+
+Check a fictional source registry—the `.invalid` entries cannot contact real sites:
+
+```bash
+fpl-agent sources check examples/research-sources.yaml --as-of 2026-09-12
+```
+
+Copy and replace that file under `data/private/` before real research. The
+[audit and source-governance tutorial](docs/13-audits-and-source-governance.md) explains why reviews
+expire and how recommendation fingerprints work.
 
 Run the quality checks:
 
@@ -93,6 +106,7 @@ ruff check .
 ```mermaid
 flowchart LR
     W[Allowlisted search leads] --> M[Human-reviewed evidence]
+    S[Reviewed-source registry] --> W
     M --> E[(Immutable SQLite history)]
     E --> F[Freshness + conflict policy]
     F --> D[Typed player snapshot]
@@ -183,7 +197,8 @@ The documentation is arranged as a small course:
 11. [Roadmap](docs/10-roadmap.md)
 12. [Evidence pipeline](docs/11-evidence-pipeline.md)
 13. [Safe web research](docs/12-safe-web-research.md)
-14. [Glossary](docs/glossary.md)
+14. [Audits and source governance](docs/13-audits-and-source-governance.md)
+15. [Glossary](docs/glossary.md)
 
 ## Repository map
 

@@ -11,13 +11,9 @@ import httpx
 from fpl_agent.evidence import detect_prompt_injection
 from fpl_agent.providers.base import ProviderDocument
 from fpl_agent.providers.cache import SearchCache
+from fpl_agent.source_policy import is_blocked_game_domain
 
 BRAVE_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
-BLOCKED_GAME_DOMAINS = {
-    "fantasy.premierleague.com",
-    "draft.premierleague.com",
-    "fplchallenge.premierleague.com",
-}
 
 
 class BraveSearchProvider:
@@ -42,7 +38,7 @@ class BraveSearchProvider:
         normalized = {domain.casefold().strip(". ") for domain in allowed_domains if domain.strip()}
         if not normalized:
             raise ValueError("At least one reviewed --allowed-domain is required")
-        blocked = normalized.intersection(BLOCKED_GAME_DOMAINS)
+        blocked = {domain for domain in normalized if is_blocked_game_domain(domain)}
         if blocked:
             raise ValueError(
                 "Automated FPL game domains are blocked by project policy: "
@@ -134,7 +130,7 @@ class BraveSearchProvider:
         if parsed.scheme != "https" or not parsed.hostname:
             return False
         hostname = parsed.hostname.casefold().strip(".")
-        if hostname in BLOCKED_GAME_DOMAINS:
+        if is_blocked_game_domain(hostname):
             return False
         return any(
             hostname == domain or hostname.endswith(f".{domain}")

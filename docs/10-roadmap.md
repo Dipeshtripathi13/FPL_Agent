@@ -22,12 +22,12 @@
 - Reproducible freshness policy, conflict reporting, and fail-closed overlays.
 - Prompt-injection quarantine with an executable test corpus.
 
-### Milestone 2.1 — evidence usability
+### Milestone 2.1 — evidence usability — implemented
 
-- Evidence timeline report per player.
-- Export observation IDs and resolver policy in recommendation JSON.
-- Configuration file for reviewed domains and their terms-review dates.
-- More source adapters only where access and redistribution permission are documented.
+- Evidence timeline report per player with freshness and selection state.
+- Observation IDs, set fingerprint, overrides, and resolver results in recommendation JSON.
+- Expiring configuration registry for reviewed domains and their terms-review dates.
+- Provider-expansion policy documented: add adapters only with access and redistribution permission.
 
 ## Milestone 3 — fitted forecasting
 
@@ -49,7 +49,7 @@
 ## Milestone 5 — user experience
 
 - Interactive local web dashboard.
-- Evidence timeline per player.
+- Interactive visualization of the local evidence timeline.
 - Side-by-side plan comparison.
 - Approval records and weekly learning journal.
 - Local scheduler that prepares—but does not submit—a report before deadlines.

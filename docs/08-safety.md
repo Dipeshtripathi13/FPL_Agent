@@ -36,6 +36,11 @@ Milestone 2 adds source discovery without giving the model a general browser. Th
 requires a reviewed domain allowlist, filters again after the response, caches identical searches,
 limits requests, and blocks FPL game domains. It returns unverified leads only.
 
+Reusable domain decisions live in a source registry with a terms URL, purpose, review date, and
+expiry window. Future-dated, expired, or blocked game-domain entries fail closed. A current registry
+entry means “a human review is still within its declared window,” not “this source is legally or
+factually guaranteed.”
+
 ```mermaid
 flowchart LR
     A[Allowlisted API result] --> B{Instruction-like text?}

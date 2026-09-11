@@ -22,6 +22,10 @@
 | Allowlist | Explicit set of reviewed domains permitted by a provider adapter |
 | Provider | Replaceable adapter for discovering external source documents |
 | Cache | Local reuse of a previous provider response for a bounded time |
+| Evidence audit | Machine-readable record of evidence IDs and policy outcomes for one report |
+| Observation-set fingerprint | SHA-256 digest used to compare exact serialized evidence inputs |
+| Source registry | Versioned list of domain reviews, purposes, and expiry windows |
+| Review expiry | Date after which a domain is excluded until a human reviews it again |
 | Temporal leakage | Using information that was unavailable at the simulated decision time |
 | FDR | Fixture Difficulty Rating from 1 to 5 in this input schema |
 | Horizon | Number of future gameweeks considered |

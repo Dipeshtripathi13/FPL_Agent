@@ -110,6 +110,11 @@ Store retrieval time separately from publication time. A page fetched today may 
 claim. Discovery adapters cache responses and honor provider rate limits, but you must still review
 each provider's data retention, attribution, and redistribution rights.
 
+When evidence is enabled, the recommendation report records the ordered observation IDs, policy
+settings, per-player result, and a SHA-256 observation-set fingerprint. This audit metadata identifies
+the input history; it does not certify that a claim is correct. See
+[Audits and source governance](13-audits-and-source-governance.md).
+
 ## Private-data workflow
 
 Keep real files under `data/private/`; Git ignores this directory. Before every commit, run:

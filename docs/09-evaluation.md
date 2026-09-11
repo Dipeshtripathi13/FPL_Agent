@@ -20,6 +20,8 @@ Measure each boundary.
 | Harness | Only the intended read-only tools are registered |
 | Evidence | Imports are idempotent; stale, conflicting, and suspicious claims fail closed |
 | Provider | Allowlist, query bounds, API headers, quarantine, and cache work through fake HTTP |
+| Audit | Timeline states, selected IDs, fingerprints, and report metadata are reproducible |
+| Source policy | Current, future, expired, disabled, duplicate, and blocked domains are tested |
 
 Run:
 
@@ -84,6 +86,6 @@ Each evaluated run should retain model name, model digest, prompt version, rules
 code commit, tool calls, and deterministic report. This lets you distinguish a model regression from a
 data or algorithm change.
 
-Evidence-backed runs must also retain the observation IDs, database hash, resolver policy, freshness
-window, and `as-of` time. Otherwise the same inputs may produce a different decision merely because
-the wall clock moved.
+Evidence-backed JSON reports retain the observation IDs, observation-set fingerprint, resolver
+policy, freshness window, per-player application result, and `as-of` time. Otherwise the same inputs
+may produce a different decision merely because the wall clock moved.

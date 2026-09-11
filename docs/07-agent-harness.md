@@ -72,6 +72,7 @@ This illustrates an important principle:
 - Unknown tools and invalid arguments return an error result to the model.
 - The loop stops after eight turns.
 - Empty model responses fail rather than pretending success.
+- Runtime failures exit with a concise safe error rather than a traceback or partial factual report.
 - Temperature zero reduces formatting variability but does not make the model deterministic.
 - The CLI refuses success if the model never called `calculate_recommendation`.
 - The default output comes from the validated tool result, not free-form model claims.

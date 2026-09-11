@@ -94,6 +94,49 @@ def render_markdown(report: RecommendationReport, players: dict[int, Player]) ->
             )
         )
 
+    if report.evidence_audit is not None:
+        audit = report.evidence_audit
+        lines.extend(
+            [
+                "## Evidence audit",
+                "",
+                f"As of: `{audit.as_of.isoformat()}`  ",
+                f"Policy: `{audit.max_age_hours}`-hour freshness window; "
+                f"allow conflicts `{audit.allow_conflicts}`; allow stale `{audit.allow_stale}`  ",
+                f"Observation-set fingerprint: `{audit.observation_set_sha256}`  ",
+                f"Stored observations: `{audit.observation_count}`",
+                "",
+                "| Player | Observation IDs | Selected | Applied | Blocked reasons |",
+                "|---|---|---:|---|---|",
+            ]
+        )
+        for item in audit.player_resolutions:
+            observation_ids = ", ".join(str(value) for value in item.observation_ids) or "—"
+            blocked = ", ".join(item.blocked_reasons) or "—"
+            lines.append(
+                f"| {_name(players, item.player_id)} | {observation_ids} | "
+                f"{item.selected_observation_id or '—'} | {item.applied} | {blocked} |"
+            )
+        if not audit.player_resolutions:
+            lines.append("| — | — | — | — | No usable observations |")
+        if audit.quarantined_observation_ids:
+            lines.extend(
+                [
+                    "",
+                    "Quarantined observation IDs: "
+                    + ", ".join(str(value) for value in audit.quarantined_observation_ids),
+                ]
+            )
+        if audit.unknown_player_observation_ids:
+            lines.extend(
+                [
+                    "",
+                    "Unknown-player observation IDs: "
+                    + ", ".join(str(value) for value in audit.unknown_player_observation_ids),
+                ]
+            )
+        lines.append("")
+
     lines.extend(["## Assumptions", ""])
     lines.extend(f"- {assumption}" for assumption in report.assumptions)
     lines.extend(["", "## Warnings", ""])

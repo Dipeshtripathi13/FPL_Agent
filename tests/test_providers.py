@@ -68,6 +68,8 @@ def test_brave_provider_requires_reviewed_domains():
 def test_brave_provider_blocks_fpl_game_domains():
     with pytest.raises(ValueError, match="blocked"):
         BraveSearchProvider("test-key", ["fantasy.premierleague.com"])
+    with pytest.raises(ValueError, match="blocked"):
+        BraveSearchProvider("test-key", ["news.fantasy.premierleague.com"])
 
 
 def test_brave_provider_rejects_oversized_query():

@@ -109,6 +109,9 @@ fpl-agent recommend --gameweek 4 \
 Without `--as-of`, the current clock is correct for a live decision. With it, the same snapshot and
 commit produce the same freshness judgment later. This prevents **temporal leakage** in a backtest.
 
+Use `fpl-agent evidence timeline --player NAME` to inspect the entire history and selected row. The
+[audit tutorial](13-audits-and-source-governance.md) explains the timeline and report fingerprint.
+
 ## Prompt-injection quarantine
 
 External text is hostile input even when it comes from a familiar domain. The importer and search

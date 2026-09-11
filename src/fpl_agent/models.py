@@ -143,6 +143,37 @@ class TransferPlan(StrictModel):
     injury_decisions: list[InjuryDecision]
 
 
+class PlayerEvidenceAudit(StrictModel):
+    player_id: int
+    observation_ids: list[int]
+    selected_observation_id: int | None
+    applied: bool
+    blocked_reasons: list[str]
+    stale: bool
+    conflict: bool
+
+
+class EvidenceAudit(StrictModel):
+    schema_version: int
+    as_of: datetime
+    max_age_hours: int = Field(ge=1)
+    allow_conflicts: bool
+    allow_stale: bool
+    observation_count: int = Field(ge=0)
+    observation_ids: list[int]
+    observation_set_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    quarantined_observation_ids: list[int]
+    unknown_player_observation_ids: list[int]
+    player_resolutions: list[PlayerEvidenceAudit]
+
+    @field_validator("as_of")
+    @classmethod
+    def as_of_must_include_timezone(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("Evidence audit as_of must include a timezone")
+        return value
+
+
 class RecommendationReport(StrictModel):
     generated_at: datetime
     season: str
@@ -153,3 +184,4 @@ class RecommendationReport(StrictModel):
     plans: list[TransferPlan]
     assumptions: list[str]
     warnings: list[str]
+    evidence_audit: EvidenceAudit | None = None

@@ -10,6 +10,7 @@ flowchart TB
       T[team.yaml]
       Y[rules YAML]
       E[(evidence SQLite)]
+      S[reviewed sources YAML]
     end
     subgraph Deterministic core
       L[Load and validate]
@@ -29,6 +30,7 @@ flowchart TB
     T --> L
     Y --> L
     E --> V[Evidence policy]
+    S --> Q[Research provider]
     V --> L
     L --> R
     L --> X
@@ -37,6 +39,9 @@ flowchart TB
     O --> U
     U --> J
     U --> MD
+    V --> AU[Evidence audit]
+    AU --> J
+    AU --> MD
     C --> L
     A --> R
     A --> O
@@ -48,7 +53,7 @@ The domain models are at the center and do not know about the CLI or Ollama. The
 rules and projections but not about HTTP. The agent calls application services rather than duplicating
 their logic.
 
-This makes three future changes independent:
+This makes four future changes independent:
 
 - Replace the heuristic projection with a trained model.
 - Replace bounded enumeration with a multi-period MILP solver.
@@ -83,3 +88,6 @@ cannot cause an account change—the capability does not exist.
 
 Evidence is resolved before that registry is built. Qwen sees only the policy-approved player view,
 not quarantined search text or unresolved conflicting observations.
+
+The source registry governs the separate research provider, not the agent. Its decision expires on a
+date, while the recommendation's evidence audit captures the exact resolver decision for replay.

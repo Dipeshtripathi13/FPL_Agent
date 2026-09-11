@@ -34,6 +34,19 @@ fpl-agent research \
   --allowed-domain trusted-news.invalid
 ```
 
+For repeated research, record review dates instead of repeatedly typing domains:
+
+```bash
+cp examples/research-sources.yaml data/private/research-sources.yaml
+fpl-agent sources check data/private/research-sources.yaml
+fpl-agent research --player Flint \
+  --source-config data/private/research-sources.yaml
+```
+
+Only enabled, unexpired reviews enter the provider allowlist. The example domains use the reserved
+`.invalid` suffix and are intentionally non-operational; replace them only after reviewing each real
+source's current terms. See [Audits and source governance](13-audits-and-source-governance.md).
+
 Do not put the key in a command-line argument, YAML file, Git-tracked `.env`, or model prompt. The CLI
 only reads `BRAVE_SEARCH_API_KEY` from its environment.
 
@@ -50,6 +63,7 @@ and result limits:
 | Control | Purpose |
 |---|---|
 | Required domain allowlist | A result must come from a source you reviewed first |
+| Expiring review registry | Prevent a historical terms decision from remaining valid forever |
 | Exact/subdomain matching | `badexample.com` cannot impersonate `example.com` |
 | HTTPS only | Reject malformed or clear-text links |
 | FPL game-domain block | Preserve the project's no-automated-game-access boundary |

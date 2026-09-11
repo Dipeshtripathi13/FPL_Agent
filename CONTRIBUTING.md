@@ -21,7 +21,8 @@ Do not commit:
 - Third-party data without an explicit compatible license.
 
 Use small fictional fixtures in tests. A provider adapter must document its terms, license, rate
-limits, attribution requirements, and retention rules.
+limits, attribution requirements, and retention rules. Never add a real domain to the fictional
+example registry; keep actual review decisions under `data/private/`.
 
 ## Safety expectations
 

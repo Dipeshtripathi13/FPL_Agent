@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Annotated
 
@@ -13,10 +13,13 @@ import typer
 from fpl_agent.agent import OllamaAgent, build_tool_registry
 from fpl_agent.data import load_fixtures, load_players, load_rules, load_team
 from fpl_agent.evidence import (
+    EvidenceResolver,
+    build_evidence_audit,
     integrate_evidence,
     load_evidence_yaml,
     resolve_player_reference,
 )
+from fpl_agent.evidence_reporting import render_evidence_timeline
 from fpl_agent.evidence_store import EvidenceStore
 from fpl_agent.models import RecommendationReport
 from fpl_agent.providers.brave import BraveSearchProvider
@@ -24,6 +27,7 @@ from fpl_agent.providers.cache import SearchCache
 from fpl_agent.reporting import render_markdown
 from fpl_agent.rules import RulesEngine
 from fpl_agent.service import build_recommendation
+from fpl_agent.source_policy import load_source_policy
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -32,6 +36,8 @@ app = typer.Typer(
 )
 evidence_app = typer.Typer(no_args_is_help=True, help="Manage local availability evidence.")
 app.add_typer(evidence_app, name="evidence")
+sources_app = typer.Typer(no_args_is_help=True, help="Manage reviewed research sources.")
+app.add_typer(sources_app, name="sources")
 
 DEFAULT_PLAYERS = Path("examples/players.csv")
 DEFAULT_FIXTURES = Path("examples/fixtures.csv")
@@ -58,21 +64,34 @@ def _load_evidence_overlay(
     as_of: datetime | None = None,
 ):
     if evidence_db is None:
-        return players, [], []
+        return players, [], [], None
     if not evidence_db.exists():
         raise ValueError(
             f"Evidence database {evidence_db} does not exist. Run 'fpl-agent evidence init'."
         )
     store = EvidenceStore(evidence_db)
-    store.schema_version()
-    return integrate_evidence(
+    schema_version = store.schema_version()
+    observations = store.list_observations()
+    effective_as_of = as_of or datetime.now(UTC)
+    updated, resolutions, warnings = integrate_evidence(
         players,
-        store.list_observations(),
+        observations,
         max_age_hours=max_age_hours,
         allow_conflicts=allow_conflicts,
         allow_stale=allow_stale,
-        now=as_of,
+        now=effective_as_of,
     )
+    audit = build_evidence_audit(
+        observations,
+        resolutions,
+        players,
+        schema_version=schema_version,
+        as_of=effective_as_of,
+        max_age_hours=max_age_hours,
+        allow_conflicts=allow_conflicts,
+        allow_stale=allow_stale,
+    )
+    return updated, resolutions, warnings, audit
 
 
 def _parse_as_of(value: str | None) -> datetime | None:
@@ -81,10 +100,19 @@ def _parse_as_of(value: str | None) -> datetime | None:
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
-        raise ValueError("--evidence-as-of must be an ISO-8601 datetime") from exc
+        raise ValueError("Evidence as-of time must be an ISO-8601 datetime") from exc
     if parsed.tzinfo is None or parsed.utcoffset() is None:
-        raise ValueError("--evidence-as-of must include a timezone, such as Z or +00:00")
+        raise ValueError("Evidence as-of time must include a timezone, such as Z or +00:00")
     return parsed
+
+
+def _parse_date(value: str | None) -> date | None:
+    if value is None:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise ValueError("Source-policy as-of time must be an ISO date such as 2026-09-11") from exc
 
 
 def _escape_table(value: str) -> str:
@@ -133,7 +161,7 @@ def recommend(
     players, fixtures, team, rules = _load_inputs(
         players_path, fixtures_path, team_path, rules_path
     )
-    players, _, evidence_warnings = _load_evidence_overlay(
+    players, _, evidence_warnings, evidence_audit = _load_evidence_overlay(
         players,
         evidence_db,
         evidence_max_age_hours,
@@ -144,7 +172,12 @@ def recommend(
     report = build_recommendation(
         players, fixtures, team, rules, gameweek, horizon, max_transfers
     )
-    report.warnings.extend(evidence_warnings)
+    report = report.model_copy(
+        update={
+            "warnings": [*report.warnings, *evidence_warnings],
+            "evidence_audit": evidence_audit,
+        }
+    )
     markdown = render_markdown(report, players)
     if output:
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -186,7 +219,7 @@ def run_agent(
     players, fixtures, team, rules = _load_inputs(
         players_path, fixtures_path, team_path, rules_path
     )
-    players, _, evidence_warnings = _load_evidence_overlay(
+    players, _, evidence_warnings, evidence_audit = _load_evidence_overlay(
         players,
         evidence_db,
         evidence_max_age_hours,
@@ -199,7 +232,11 @@ def run_agent(
         f"The upcoming gameweek is {gameweek}. {prompt} "
         "Use a five-gameweek horizon and compare up to two transfers."
     )
-    model_draft = OllamaAgent(registry, model=model, base_url=ollama_url).run(full_prompt)
+    try:
+        model_draft = OllamaAgent(registry, model=model, base_url=ollama_url).run(full_prompt)
+    except (RuntimeError, ValueError) as exc:
+        typer.echo(f"Agent failed safely: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
     tool_result = registry.last_result("calculate_recommendation")
     if tool_result is None:
         typer.echo(
@@ -211,7 +248,12 @@ def run_agent(
     report_data = dict(tool_result)
     report_data.pop("player_directory", None)
     report = RecommendationReport.model_validate(report_data)
-    report.warnings.extend(evidence_warnings)
+    report = report.model_copy(
+        update={
+            "warnings": [*report.warnings, *evidence_warnings],
+            "evidence_audit": evidence_audit,
+        }
+    )
     typer.echo(render_markdown(report, players))
     typer.echo("## Agent audit\n")
     typer.echo(
@@ -339,10 +381,69 @@ def evidence_resolve(
         typer.echo(f"WARNING: {warning}")
 
 
+@evidence_app.command("timeline")
+def evidence_timeline(
+    player: Annotated[str, typer.Option("--player")],
+    database: Annotated[Path, typer.Option("--db")] = DEFAULT_EVIDENCE_DB,
+    players_path: Annotated[Path, typer.Option("--players")] = DEFAULT_PLAYERS,
+    max_age_hours: Annotated[int, typer.Option("--max-age-hours", min=1)] = 168,
+    as_of: Annotated[str | None, typer.Option("--as-of")] = None,
+    output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+) -> None:
+    """Render one player's immutable observation history and resolver outcome."""
+    if not database.exists():
+        typer.echo(f"Evidence database does not exist: {database}", err=True)
+        raise typer.Exit(code=1)
+    players = load_players(players_path)
+    player_id = resolve_player_reference(player, players)
+    effective_as_of = _parse_as_of(as_of) or datetime.now(UTC)
+    observations = EvidenceStore(database).list_observations(player_id)
+    resolution = EvidenceResolver(max_age_hours=max_age_hours).resolve(
+        player_id, observations, now=effective_as_of
+    )
+    markdown = render_evidence_timeline(
+        players[player_id],
+        observations,
+        resolution,
+        as_of=effective_as_of,
+        max_age_hours=max_age_hours,
+    )
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(markdown, encoding="utf-8")
+        typer.echo(f"Wrote evidence timeline to {output}")
+    else:
+        typer.echo(markdown)
+
+
+@sources_app.command("check")
+def sources_check(
+    config: Annotated[Path, typer.Argument(help="YAML reviewed-source registry")],
+    as_of: Annotated[str | None, typer.Option("--as-of")] = None,
+) -> None:
+    """Show which documented source reviews are current, expired, or disabled."""
+    try:
+        policy = load_source_policy(config)
+        statuses = policy.evaluate(_parse_date(as_of))
+    except (OSError, ValueError) as exc:
+        typer.echo(f"Source policy failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo("| Source | Domain | Reviewed | Expires | Enabled | Current | Reason |")
+    typer.echo("|---|---|---|---|---|---|---|")
+    for status in statuses:
+        typer.echo(
+            f"| {_escape_table(status.name)} | {status.domain} | {status.reviewed_at} | "
+            f"{status.review_expires_at} | {status.enabled} | {status.current} | "
+            f"{status.reason} |"
+        )
+
+
 @app.command()
 def research(
     player: Annotated[str, typer.Option("--player")],
     allowed_domain: Annotated[list[str] | None, typer.Option("--allowed-domain")] = None,
+    source_config: Annotated[Path | None, typer.Option("--source-config")] = None,
+    source_as_of: Annotated[str | None, typer.Option("--source-as-of")] = None,
     players_path: Annotated[Path, typer.Option("--players")] = DEFAULT_PLAYERS,
     cache_path: Annotated[Path, typer.Option("--cache")] = DEFAULT_SEARCH_CACHE,
     max_results: Annotated[int, typer.Option("--max-results", min=1, max=20)] = 5,
@@ -352,6 +453,21 @@ def research(
     players = load_players(players_path)
     player_id = resolve_player_reference(player, players)
     selected = players[player_id]
+    domains = set(allowed_domain or [])
+    if source_config:
+        try:
+            statuses = load_source_policy(source_config).evaluate(_parse_date(source_as_of))
+        except (OSError, ValueError) as exc:
+            typer.echo(f"Source policy failed: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+        domains.update(status.domain for status in statuses if status.current)
+        for status in statuses:
+            if not status.current and status.enabled:
+                typer.echo(
+                    f"WARNING: {status.domain} was excluded ({status.reason}; "
+                    f"review expires {status.review_expires_at}).",
+                    err=True,
+                )
     token = os.getenv("BRAVE_SEARCH_API_KEY")
     if not token:
         typer.echo(
@@ -363,7 +479,7 @@ def research(
     try:
         provider = BraveSearchProvider(
             token,
-            allowed_domain or [],
+            sorted(domains),
             cache=cache,
             freshness=freshness,
         )
@@ -375,6 +491,7 @@ def research(
         typer.echo(f"Research failed: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 
+    typer.echo(f"Reviewed domains used: {', '.join(sorted(domains))}")
     if not documents:
         typer.echo("No results passed the reviewed domain allowlist.")
         return

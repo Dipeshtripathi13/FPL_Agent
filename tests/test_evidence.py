@@ -1,16 +1,19 @@
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from pydantic import ValidationError
 
 from fpl_agent.evidence import (
     EvidenceObservation,
     EvidenceResolver,
     apply_resolved_evidence,
+    build_evidence_audit,
     detect_prompt_injection,
     integrate_evidence,
     load_evidence_yaml,
     resolve_player_reference,
 )
+from fpl_agent.evidence_reporting import render_evidence_timeline
 from fpl_agent.evidence_store import EvidenceStore
 
 NOW = datetime(2026, 9, 11, 16, tzinfo=UTC)
@@ -134,3 +137,61 @@ def test_quarantined_evidence_never_reaches_player_overlay(players):
     assert resolutions == []
     assert updated[6] == players[6]
     assert "quarantined and ignored" in warnings[0]
+
+
+def test_evidence_audit_fingerprints_inputs_and_records_policy(players):
+    items = [
+        observation(id=10),
+        observation(
+            id=11,
+            player_id=999,
+            source_url="https://news.example.invalid/unknown",
+        ),
+        observation(
+            id=12,
+            quarantined=True,
+            safety_flags=["instruction_override"],
+            source_url="https://news.example.invalid/quarantined",
+        ),
+    ]
+    _, resolutions, _ = integrate_evidence(players, items, now=NOW)
+    audit = build_evidence_audit(
+        items,
+        resolutions,
+        players,
+        schema_version=1,
+        as_of=NOW,
+        max_age_hours=168,
+        allow_conflicts=False,
+        allow_stale=False,
+    )
+    assert audit.observation_ids == [10, 11, 12]
+    assert len(audit.observation_set_sha256) == 64
+    assert audit.quarantined_observation_ids == [12]
+    assert audit.unknown_player_observation_ids == [11]
+    assert audit.player_resolutions[0].selected_observation_id == 10
+    assert audit.player_resolutions[0].applied is True
+
+    invalid = audit.model_dump(mode="json")
+    invalid["as_of"] = "2026-09-11T16:00:00"
+    with pytest.raises(ValidationError, match="timezone"):
+        type(audit).model_validate(invalid)
+
+
+def test_evidence_timeline_visualizes_every_safety_state(players):
+    items = [
+        observation(id=1),
+        observation(id=2, published_at=NOW - timedelta(days=10)),
+        observation(id=3, published_at=NOW + timedelta(hours=1)),
+        observation(id=4, quarantined=True, safety_flags=["instruction_override"]),
+    ]
+    resolution = EvidenceResolver().resolve(6, items, now=NOW)
+    markdown = render_evidence_timeline(
+        players[6], items, resolution, as_of=NOW, max_age_hours=168
+    )
+    assert "# Evidence timeline — Flint" in markdown
+    assert "| fresh |" in markdown
+    assert "| stale |" in markdown
+    assert "| future |" in markdown
+    assert "| quarantined |" in markdown
+    assert "| yes |" in markdown

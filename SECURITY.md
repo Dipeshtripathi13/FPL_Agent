@@ -22,6 +22,9 @@ evidence fails closed before the agent harness is built. The model cannot bypass
 the rules engine, provider allowlists, or the absence of account-changing tools. Web content must
 never be interpreted as system instructions.
 
+Reusable source permissions must include a review date and expiry in the private source registry.
+An expired review is not accepted merely because the same domain was used successfully before.
+
 ## Reporting a vulnerability
 
 Open a private GitHub security advisory rather than a public issue. Include reproduction steps and

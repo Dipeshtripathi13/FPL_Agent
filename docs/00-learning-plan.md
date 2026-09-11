@@ -18,7 +18,9 @@ system—not merely as a prompt sent to a model.
 | 7 | Run Qwen locally | Agent loop | Inspect which tools it chooses for two prompts |
 | 8 | Read `evidence.py` | Trust boundaries and provenance | Create stale and conflicting claims |
 | 9 | Read `providers/` | Least-privilege web research | Test an allowlisted fake response |
-| 10 | Backtest a snapshot | Evaluation | Compare the agent with “always roll” |
+| 10 | Read `source_policy.py` | Expiring governance decisions | Move a review date past expiry |
+| 11 | Inspect report JSON | Reproducible audit records | Compare two evidence fingerprints |
+| 12 | Backtest a snapshot | Evaluation | Compare the agent with “always roll” |
 
 ## The mental model
 
@@ -50,3 +52,4 @@ You have learned the MVP when you can explain:
 5. Why a technically accessible endpoint may still be inappropriate to automate.
 6. Why a search result, an evidence observation, and a derived estimate are different objects.
 7. How freshness, conflict, quarantine, and time-controlled replay make external data auditable.
+8. Why source permission reviews expire and what an evidence fingerprint can and cannot prove.

@@ -1,0 +1,19 @@
+# Fictional registry used to learn source-governance mechanics.
+# Replace these .invalid domains with sources whose terms you have reviewed.
+version: 1
+sources:
+  - name: Fictional club newsroom
+    domain: news.example.invalid
+    terms_url: https://news.example.invalid/terms
+    reviewed_at: 2026-09-11
+    review_after_days: 180
+    purpose: Discover official availability and training updates for manual review.
+    enabled: true
+
+  - name: Paused fictional reporter
+    domain: reporter.example.invalid
+    terms_url: https://reporter.example.invalid/terms
+    reviewed_at: 2026-09-11
+    review_after_days: 90
+    purpose: Demonstrate a source that remains documented but cannot be queried.
+    enabled: false

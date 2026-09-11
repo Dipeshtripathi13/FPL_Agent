@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -10,7 +12,12 @@ from typing import Any
 import yaml
 from pydantic import Field, field_validator, model_validator
 
-from fpl_agent.models import Player, StrictModel
+from fpl_agent.models import (
+    EvidenceAudit,
+    Player,
+    PlayerEvidenceAudit,
+    StrictModel,
+)
 
 
 class EvidenceObservation(StrictModel):
@@ -56,6 +63,7 @@ class ResolvedAvailability(StrictModel):
     source_url: str
     published_at: datetime
     observation_ids: list[int]
+    selected_observation_id: int | None
     stale: bool
     conflict: bool
     warnings: list[str]
@@ -226,6 +234,7 @@ class EvidenceResolver:
             observation_ids=[
                 observation.id for observation in candidates if observation.id is not None
             ],
+            selected_observation_id=primary.id,
             stale=not bool(fresh),
             conflict=conflict,
             warnings=warnings,
@@ -290,7 +299,7 @@ def integrate_evidence(
         warnings.append(
             f"{len(quarantined)} suspicious evidence observation(s) were quarantined and ignored."
         )
-    for player_id in known_ids:
+    for player_id in sorted(known_ids):
         resolution = resolver.resolve(player_id, observations, now=now)
         if resolution is not None:
             resolutions.append(resolution)
@@ -305,3 +314,71 @@ def integrate_evidence(
     )
     warnings.extend(overlay_warnings)
     return updated, resolutions, warnings
+
+
+def build_evidence_audit(
+    observations: list[EvidenceObservation],
+    resolutions: list[ResolvedAvailability],
+    players: dict[int, Player],
+    *,
+    schema_version: int,
+    as_of: datetime,
+    max_age_hours: int,
+    allow_conflicts: bool,
+    allow_stale: bool,
+) -> EvidenceAudit:
+    """Capture the exact observation set and policy outcome used by a recommendation."""
+
+    ordered = sorted(
+        observations,
+        key=lambda item: (
+            item.id is None,
+            item.id or 0,
+            item.published_at,
+            item.source_url,
+        ),
+    )
+    serialized = [item.model_dump(mode="json") for item in ordered]
+    fingerprint = hashlib.sha256(
+        json.dumps(serialized, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    observation_ids = [item.id for item in ordered if item.id is not None]
+    quarantined_ids = [
+        item.id for item in ordered if item.quarantined and item.id is not None
+    ]
+    unknown_ids = [
+        item.id
+        for item in ordered
+        if item.player_id not in players and item.id is not None
+    ]
+    player_audits: list[PlayerEvidenceAudit] = []
+    for resolution in sorted(resolutions, key=lambda item: item.player_id):
+        blocked_reasons: list[str] = []
+        if resolution.conflict and not allow_conflicts:
+            blocked_reasons.append("conflict")
+        if resolution.stale and not allow_stale:
+            blocked_reasons.append("stale")
+        player_audits.append(
+            PlayerEvidenceAudit(
+                player_id=resolution.player_id,
+                observation_ids=resolution.observation_ids,
+                selected_observation_id=resolution.selected_observation_id,
+                applied=not blocked_reasons,
+                blocked_reasons=blocked_reasons,
+                stale=resolution.stale,
+                conflict=resolution.conflict,
+            )
+        )
+    return EvidenceAudit(
+        schema_version=schema_version,
+        as_of=as_of,
+        max_age_hours=max_age_hours,
+        allow_conflicts=allow_conflicts,
+        allow_stale=allow_stale,
+        observation_count=len(observations),
+        observation_ids=observation_ids,
+        observation_set_sha256=fingerprint,
+        quarantined_observation_ids=quarantined_ids,
+        unknown_player_observation_ids=unknown_ids,
+        player_resolutions=player_audits,
+    )
