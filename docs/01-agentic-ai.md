@@ -15,7 +15,8 @@ In FPL Agent:
 - **Tools:** validate the team, inspect evidence, read rules, and calculate recommendations.
 - **Loop:** `OllamaAgent.run` repeats until the model returns a final answer or reaches a turn limit.
 - **State:** the supplied squad, players, fixtures, rules, and message history.
-- **Policies:** no mutation tools, strict schemas, deterministic rule validation, and bounded turns.
+- **Policies:** no mutation tools, strict schemas, evidence freshness/conflict checks, deterministic
+  rule validation, and bounded turns.
 - **Evaluation:** unit tests, scenario tests, backtests, and safety assertions.
 
 ## Deterministic and stochastic components
@@ -27,6 +28,10 @@ In FPL Agent:
 | Optimize supplied expected points | Deterministic | The same inputs should give the same choice |
 | Interpret ambiguous injury wording | Stochastic | Natural language contains uncertainty |
 | Explain the trade-off | Stochastic | Multiple correct explanations are possible |
+
+External discovery is deliberately outside the agent loop. Search produces an untrusted document;
+human review produces an observation; deterministic policy produces a player estimate. This keeps
+language-model autonomy away from the point where outside text becomes trusted state.
 
 A common beginner mistake is to ask the LLM to do all five jobs. That produces plausible prose but
 weak reproducibility. This project makes the model a coordinator and communicator around tested code.

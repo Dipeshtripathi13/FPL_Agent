@@ -18,6 +18,8 @@ Measure each boundary.
 | Projection | Easier fixtures score higher; blanks are zero; injuries reduce xP |
 | Optimization | 0/1/2 plans exist, hits apply, and every lineup is legal |
 | Harness | Only the intended read-only tools are registered |
+| Evidence | Imports are idempotent; stale, conflicting, and suspicious claims fail closed |
+| Provider | Allowlist, query bounds, API headers, quarantine, and cache work through fake HTTP |
 
 Run:
 
@@ -72,8 +74,16 @@ evaluation artifact, not the plan. The default user-facing report must use names
 report the correct hit, cite supplied evidence, and refuse to claim execution because trusted code
 renders it from the tool result.
 
+Provider tests must not depend on a live network or paid API. `httpx.MockTransport` supplies fixed
+responses, making the suite fast and deterministic while proving the outbound contract. Keep a live
+provider smoke test separate and opt-in.
+
 ## Reproducibility record
 
 Each evaluated run should retain model name, model digest, prompt version, rules version, input hashes,
 code commit, tool calls, and deterministic report. This lets you distinguish a model regression from a
 data or algorithm change.
+
+Evidence-backed runs must also retain the observation IDs, database hash, resolver policy, freshness
+window, and `as-of` time. Otherwise the same inputs may produce a different decision merely because
+the wall clock moved.

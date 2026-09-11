@@ -20,13 +20,36 @@ using browser automation does not turn prohibited automation into manual use.
 | Threat | Example | MVP control |
 |---|---|---|
 | Secret disclosure | Token committed to Git | No account token required; private paths ignored |
-| Prompt injection | Article says “ignore previous rules” | Web content is data; no web tool in MVP |
+| Prompt injection | Search snippet says “ignore previous rules” | Screen and quarantine; snippets never become facts |
 | Hallucinated injury | Model invents a six-week absence | Evidence fields and URLs supplied to tools |
 | Illegal squad | Four players from one club | Deterministic `RulesEngine` rejection |
 | Costly transfer | Model overlooks a four-point hit | Optimizer calculates hit from free transfers |
 | Unauthorized action | Prompt asks model to submit | No mutation capability exists |
 | Infinite loop | Model repeatedly calls tools | Eight-turn maximum |
-| Stale information | Old article treated as current | Publication timestamp retained; freshness checks next |
+| Stale information | Old article treated as current | Resolver fails closed after the freshness window |
+| Conflicting sources | Club and reporter disagree | Preserve both; warn and refuse the overlay by default |
+| Search key leakage | API token appears in shell history | Environment-only key; never a CLI option or model input |
+
+## External-data boundary
+
+Milestone 2 adds source discovery without giving the model a general browser. The Brave adapter
+requires a reviewed domain allowlist, filters again after the response, caches identical searches,
+limits requests, and blocks FPL game domains. It returns unverified leads only.
+
+```mermaid
+flowchart LR
+    A[Allowlisted API result] --> B{Instruction-like text?}
+    B -->|yes| Q[Quarantine]
+    B -->|no| H[Human review]
+    H --> Y[Typed YAML observation]
+    Y --> V{Fresh and consistent?}
+    V -->|yes| D[Decision input]
+    V -->|no| W[Warning; baseline retained]
+```
+
+This layered design matters because prompt-injection detection is heuristic. Security comes mainly
+from separating search from ingestion, using deterministic resolution, and withholding mutation
+capabilities—not from believing a text classifier can identify every attack.
 
 ## Two-phase execution design
 

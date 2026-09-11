@@ -81,3 +81,94 @@ def test_agent_command_suppresses_unverified_model_draft(monkeypatch):
     assert "FPL Agent recommendation" in result.stdout
     assert "INCORRECT MODEL CLAIM" not in result.stdout
     assert "rendered from validated tool output" in result.stdout
+
+
+def test_evidence_commands_import_list_and_resolve(tmp_path):
+    database = tmp_path / "evidence.db"
+    init_result = runner.invoke(app, ["evidence", "init", "--db", str(database)])
+    assert init_result.exit_code == 0
+
+    import_result = runner.invoke(
+        app,
+        [
+            "evidence",
+            "import",
+            str(ROOT / "examples/evidence.yaml"),
+            "--db",
+            str(database),
+            "--players",
+            str(ROOT / "examples/players.csv"),
+        ],
+    )
+    assert import_result.exit_code == 0
+    assert "Imported 2" in import_result.stdout
+
+    list_result = runner.invoke(
+        app,
+        [
+            "evidence",
+            "list",
+            "--db",
+            str(database),
+            "--players",
+            str(ROOT / "examples/players.csv"),
+            "--player",
+            "Flint",
+        ],
+    )
+    assert list_result.exit_code == 0
+    assert "Flint" in list_result.stdout
+    assert "accepted" in list_result.stdout
+
+    resolve_result = runner.invoke(
+        app,
+        [
+            "evidence",
+            "resolve",
+            "--db",
+            str(database),
+            "--players",
+            str(ROOT / "examples/players.csv"),
+            "--as-of",
+            "2026-09-12T00:00:00Z",
+        ],
+    )
+    assert resolve_result.exit_code == 0
+    assert "Flint" in resolve_result.stdout
+    assert "False" in resolve_result.stdout
+
+
+def test_evidence_as_of_requires_timezone(tmp_path):
+    database = tmp_path / "evidence.db"
+    runner.invoke(app, ["evidence", "init", "--db", str(database)])
+    result = runner.invoke(
+        app,
+        [
+            "evidence",
+            "resolve",
+            "--db",
+            str(database),
+            "--as-of",
+            "2026-09-12T00:00:00",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "must include a timezone" in str(result.exception)
+
+
+def test_research_requires_environment_key(monkeypatch):
+    monkeypatch.delenv("BRAVE_SEARCH_API_KEY", raising=False)
+    result = runner.invoke(
+        app,
+        [
+            "research",
+            "--player",
+            "Flint",
+            "--allowed-domain",
+            "club.example",
+            "--players",
+            str(ROOT / "examples/players.csv"),
+        ],
+    )
+    assert result.exit_code == 1
+    assert "BRAVE_SEARCH_API_KEY" in result.stderr

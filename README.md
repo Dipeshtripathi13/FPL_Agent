@@ -11,7 +11,7 @@ read-only analysis tools through Ollama and explain the deterministic result.
 The sample players and clubs are entirely fictional. This project is not affiliated with or endorsed
 by the Premier League or Fantasy Premier League.
 
-## What the MVP can do
+## What the project can do
 
 - Validate a 15-player squad against versioned 2026/27 rules.
 - Project player points over one to eight gameweeks.
@@ -21,10 +21,14 @@ by the Premier League or Fantasy Premier League.
 - Optimize a legal formation, captain, vice-captain, reserve goalkeeper, and bench order.
 - Turn availability evidence into an explicit `transfer`, `bench`, or `start_with_risk` decision.
 - Let a local `qwen3:8b` model select safe tools, then render their validated result.
+- Store source-bound availability observations in an immutable local SQLite history.
+- Resolve player names, freshness, and conflicting evidence with fail-closed policies.
+- Discover reviewable web sources through an allowlisted, cached Brave Search adapter.
 - Produce Markdown and machine-readable JSON reports.
 
-The MVP does not predict price changes, optimize chips, learn model weights from historical data,
-or make account changes. Those are later milestones, described in [the roadmap](docs/10-roadmap.md).
+The project does not automatically turn search snippets into facts, predict price changes, optimize
+chips, learn model weights from historical data, or make account changes. Those are later milestones,
+described in [the roadmap](docs/10-roadmap.md).
 
 ## Quick start
 
@@ -62,6 +66,21 @@ The model's free-form draft is suppressed because it is not a trustworthy data c
 `--show-model-draft` only to study model behavior; the normal output is rendered from validated tool
 results.
 
+Build a local evidence history and use it in the recommendation:
+
+```bash
+fpl-agent evidence init
+fpl-agent evidence import examples/evidence.yaml
+fpl-agent evidence resolve --as-of 2026-09-12T00:00:00Z
+fpl-agent recommend --gameweek 4 \
+  --evidence-db data/private/evidence.db \
+  --evidence-as-of 2026-09-12T00:00:00Z
+```
+
+The `--evidence-as-of` option makes the fictional dated example reproducible. Omit it for a live
+decision so freshness is measured against the current time. Read the
+[evidence pipeline tutorial](docs/11-evidence-pipeline.md) before using real sources.
+
 Run the quality checks:
 
 ```bash
@@ -73,7 +92,11 @@ ruff check .
 
 ```mermaid
 flowchart LR
-    U[Manual or licensed snapshots] --> D[Typed data loaders]
+    W[Allowlisted search leads] --> M[Human-reviewed evidence]
+    M --> E[(Immutable SQLite history)]
+    E --> F[Freshness + conflict policy]
+    F --> D[Typed player snapshot]
+    U[Manual or licensed snapshots] --> D
     D --> R[Rules engine]
     D --> P[Projection engine]
     R --> O[Transfer and lineup optimizer]
@@ -83,12 +106,15 @@ flowchart LR
     H --> R
     H --> O
     O --> H
-    H --> E[Educational explanation]
+    H --> EX[Educational explanation]
 ```
 
 The model is not the rules engine or the calculator. It decides which read-only tools to call and
 explains their structured results. This is the project's most important design decision: stochastic
 language generation is useful around deterministic domain logic, not in place of it.
+
+Search results are not evidence either. The research adapter returns unverified leads; a human must
+review and import a typed observation before it can affect the optimizer.
 
 Read [What is an agent?](docs/01-agentic-ai.md) and then the
 [architecture walkthrough](docs/02-architecture.md) for a detailed tour.
@@ -101,16 +127,19 @@ Copy the files in `examples/` and replace the fictional values:
 cp examples/team.yaml data/private/my-team.yaml
 cp examples/players.csv data/private/my-players.csv
 cp examples/fixtures.csv data/private/my-fixtures.csv
+cp examples/evidence.yaml data/private/my-evidence.yaml
 ```
 
 `data/private/` is ignored by Git. Keep the column names unchanged, use prices in millions such as
 `7.5`, and record an evidence URL and timestamp for any availability claim. Then run:
 
 ```bash
+fpl-agent evidence import data/private/my-evidence.yaml
 fpl-agent recommend --gameweek 4 \
   --team data/private/my-team.yaml \
   --players data/private/my-players.csv \
-  --fixtures data/private/my-fixtures.csv
+  --fixtures data/private/my-fixtures.csv \
+  --evidence-db data/private/evidence.db
 ```
 
 The schemas and field meanings are explained in [Data and provenance](docs/03-data.md).
@@ -152,13 +181,16 @@ The documentation is arranged as a small course:
 9. [Safety and compliance](docs/08-safety.md)
 10. [Testing and evaluation](docs/09-evaluation.md)
 11. [Roadmap](docs/10-roadmap.md)
-12. [Glossary](docs/glossary.md)
+12. [Evidence pipeline](docs/11-evidence-pipeline.md)
+13. [Safe web research](docs/12-safe-web-research.md)
+14. [Glossary](docs/glossary.md)
 
 ## Repository map
 
 ```text
 FPL_Agent/
 ├── src/fpl_agent/       # Application code
+│   └── providers/       # Bounded external discovery adapters
 ├── rules/               # Season-versioned deterministic rule packs
 ├── examples/            # Fictional data safe to commit
 ├── tests/               # Executable behavior and safety checks

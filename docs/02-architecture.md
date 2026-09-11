@@ -9,6 +9,7 @@ flowchart TB
       F[fixtures.csv]
       T[team.yaml]
       Y[rules YAML]
+      E[(evidence SQLite)]
     end
     subgraph Deterministic core
       L[Load and validate]
@@ -27,6 +28,8 @@ flowchart TB
     F --> L
     T --> L
     Y --> L
+    E --> V[Evidence policy]
+    V --> L
     L --> R
     L --> X
     X --> O
@@ -50,6 +53,7 @@ This makes three future changes independent:
 - Replace the heuristic projection with a trained model.
 - Replace bounded enumeration with a multi-period MILP solver.
 - Replace Ollama with another OpenAI-compatible local runtime.
+- Add another licensed discovery provider behind the small provider protocol.
 
 ## One deterministic recommendation
 
@@ -74,5 +78,8 @@ sequenceDiagram
 ## One agent run
 
 The agent is deliberately thin. It owns conversation state and the tool loop, while Python services
-own facts and calculations. The registry exposes only four read-only tools, so even a malicious prompt
+own facts and calculations. The registry exposes only five read-only tools, so even a malicious prompt
 cannot cause an account change—the capability does not exist.
+
+Evidence is resolved before that registry is built. Qwen sees only the policy-approved player view,
+not quarantined search text or unresolved conflicting observations.

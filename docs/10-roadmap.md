@@ -13,14 +13,21 @@
 - Local Qwen/Ollama read-only tool loop.
 - Fictional examples, tests, documentation, and CI.
 
-## Milestone 2 — evidence pipeline
+## Milestone 2 — evidence pipeline — implemented
 
-- Provider interface for permitted news/search APIs.
-- Source allowlist, caching, rate limiting, and robots/terms review.
-- Separate evidence observations from derived availability estimates.
-- Entity resolution for player names and clubs.
-- Freshness policies and conflict reporting.
-- Prompt-injection test corpus.
+- Provider interface and bounded Brave Search discovery adapter.
+- Required source allowlist, six-hour cache, request rate limit, and terms-review guidance.
+- Immutable SQLite observations separated from derived availability estimates.
+- Exact and unambiguous partial player-name resolution.
+- Reproducible freshness policy, conflict reporting, and fail-closed overlays.
+- Prompt-injection quarantine with an executable test corpus.
+
+### Milestone 2.1 — evidence usability
+
+- Evidence timeline report per player.
+- Export observation IDs and resolver policy in recommendation JSON.
+- Configuration file for reviewed domains and their terms-review dates.
+- More source adapters only where access and redistribution permission are documented.
 
 ## Milestone 3 — fitted forecasting
 

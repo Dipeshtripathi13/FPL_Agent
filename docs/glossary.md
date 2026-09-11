@@ -13,6 +13,16 @@
 | Calibration | Whether predicted probabilities match observed frequencies |
 | Data leakage | Using information that was unavailable at prediction time |
 | Provenance | Where a datum came from and when it was observed |
+| Observation | One immutable, source-bound claim; not automatically the final truth |
+| Derived availability | Resolver output computed from one or more observations |
+| Freshness window | Maximum accepted age of an observation at a chosen as-of time |
+| Conflict | Strong fresh observations disagree enough to require review |
+| Quarantine | Retain suspicious input for audit while preventing its use |
+| Entity resolution | Map a source name or identifier to exactly one local player |
+| Allowlist | Explicit set of reviewed domains permitted by a provider adapter |
+| Provider | Replaceable adapter for discovering external source documents |
+| Cache | Local reuse of a previous provider response for a bounded time |
+| Temporal leakage | Using information that was unavailable at the simulated decision time |
 | FDR | Fixture Difficulty Rating from 1 to 5 in this input schema |
 | Horizon | Number of future gameweeks considered |
 | Objective | Numeric score the optimizer tries to maximize |

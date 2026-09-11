@@ -1,0 +1,25 @@
+# Fictional evidence demonstrating the immutable observation schema.
+# Import it with:
+#   fpl-agent evidence import examples/evidence.yaml
+observations:
+  - player: Flint
+    claim: Club update says the defender remains unavailable for the next three matches.
+    status: injured
+    chance_of_playing: 10
+    expected_minutes: 5
+    source_url: https://news.example.invalid/flint-injury-update
+    source_type: official_club
+    provider: manual
+    published_at: 2026-09-11T09:00:00Z
+    confidence: 0.95
+
+  - player: Zephyr
+    claim: The forward returned to partial training and faces a late fitness test.
+    status: doubtful
+    chance_of_playing: 60
+    expected_minutes: 55
+    source_url: https://news.example.invalid/zephyr-training-update
+    source_type: official_club
+    provider: manual
+    published_at: 2026-09-11T10:30:00Z
+    confidence: 0.85

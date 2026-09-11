@@ -16,7 +16,9 @@ system—not merely as a prompt sent to a model.
 | 5 | Read `optimizer.py` | Constrained decisions | Change the transfer option-value penalty |
 | 6 | Read `agent.py` | Tool calling | Add a read-only tool for one player's projections |
 | 7 | Run Qwen locally | Agent loop | Inspect which tools it chooses for two prompts |
-| 8 | Backtest a snapshot | Evaluation | Compare the agent with “always roll” |
+| 8 | Read `evidence.py` | Trust boundaries and provenance | Create stale and conflicting claims |
+| 9 | Read `providers/` | Least-privilege web research | Test an allowlisted fake response |
+| 10 | Backtest a snapshot | Evaluation | Compare the agent with “always roll” |
 
 ## The mental model
 
@@ -46,3 +48,5 @@ You have learned the MVP when you can explain:
 3. How tool schemas reduce, but do not eliminate, model errors.
 4. Why historical evaluation must respect the original gameweek deadline.
 5. Why a technically accessible endpoint may still be inappropriate to automate.
+6. Why a search result, an evidence observation, and a derived estimate are different objects.
+7. How freshness, conflict, quarantine, and time-controlled replay make external data auditable.

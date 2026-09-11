@@ -32,8 +32,42 @@ flowchart LR
 | `source_url` | URL | Where the availability statement came from |
 | `source_published_at` | datetime | ISO-8601 evidence timestamp |
 
-`chance_of_playing` is an estimate, not a fact. If two credible sources disagree, preserve both raw
-observations in a future evidence table and derive the estimate separately.
+`chance_of_playing` is an estimate, not a fact. CSV values are the baseline snapshot. The evidence
+pipeline can overlay a newer derived estimate without changing that original file.
+
+## Evidence observations
+
+`examples/evidence.yaml` is the human-review interchange format. `fpl-agent evidence import` validates
+each item and appends it to `data/private/evidence.db`. One row means one source-bound claim, not the
+final truth about a player.
+
+```mermaid
+erDiagram
+    PLAYER ||--o{ EVIDENCE_OBSERVATION : "is about"
+    PLAYER {
+      int id
+      string name
+    }
+    EVIDENCE_OBSERVATION {
+      int id
+      int player_id
+      string claim
+      string status
+      float chance_of_playing
+      float expected_minutes
+      string source_url
+      datetime published_at
+      datetime retrieved_at
+      float confidence
+      bool quarantined
+      string content_hash
+    }
+```
+
+Publication time answers “when could this claim have been known?” Retrieval time answers “when did
+this run obtain it?” The distinction prevents a newly fetched old article from looking like fresh
+news. The content hash makes retries idempotent, and the append-only store retains conflicting claims
+for audit. See [Evidence pipeline](11-evidence-pipeline.md) for the resolver policy.
 
 ## Fixture CSV
 
@@ -73,8 +107,8 @@ Prefer, in order:
 4. Social posts only when clearly labeled as low-confidence evidence.
 
 Store retrieval time separately from publication time. A page fetched today may contain a week-old
-claim. Future ingestion adapters should cache responses, honor provider rate limits, and document data
-retention and redistribution rights.
+claim. Discovery adapters cache responses and honor provider rate limits, but you must still review
+each provider's data retention, attribution, and redistribution rights.
 
 ## Private-data workflow
 
